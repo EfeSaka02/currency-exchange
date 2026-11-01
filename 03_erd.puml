@@ -1,0 +1,75 @@
+@startuml
+title Entity-Relationship Diagram - Mobile Currency Exchange System
+skinparam dpi 150
+skinparam shadowing false
+skinparam linetype ortho
+skinparam entity {
+  BackgroundColor #F4F8FC
+  BorderColor #1F4E79
+}
+hide circle
+
+entity "users" as users {
+  * id : UUID <<PK>>
+  --
+  * email : VARCHAR(255) <<UNIQUE>>
+  * password_hash : VARCHAR(255)
+  * created_at : TIMESTAMP
+}
+
+entity "currencies" as currencies {
+  * code : CHAR(3) <<PK>>
+  --
+  * name : VARCHAR(64)
+}
+
+entity "wallet_balances" as wallet_balances {
+  * id : BIGINT <<PK>>
+  --
+  * user_id : UUID <<FK>>
+  * currency_code : CHAR(3) <<FK>>
+  * amount : NUMERIC(18,2)
+  ..
+  UNIQUE (user_id, currency_code)
+  CHECK (amount >= 0)
+}
+
+entity "exchange_rates" as exchange_rates {
+  * id : BIGINT <<PK>>
+  --
+  * currency_code : CHAR(3) <<FK>>
+  * effective_date : DATE
+  * bid : NUMERIC(10,4)
+  * ask : NUMERIC(10,4)
+  * fetched_at : TIMESTAMP
+  ..
+  UNIQUE (currency_code, effective_date)
+}
+
+entity "transactions" as transactions {
+  * id : UUID <<PK>>
+  --
+  * user_id : UUID <<FK>>
+  * request_key : UUID
+  * type : VARCHAR(4)  'BUY' | 'SELL'
+  * currency_code : CHAR(3) <<FK>>
+  * foreign_amount : NUMERIC(18,2)
+  rate_id : BIGINT <<FK>>
+  rate : NUMERIC(10,4)
+  pln_amount : NUMERIC(18,2)
+  * status : VARCHAR(10)  'PENDING' | 'COMPLETED' | 'REJECTED'
+  rejection_reason : VARCHAR(64)
+  * created_at : TIMESTAMP
+  completed_at : TIMESTAMP
+  ..
+  UNIQUE (user_id, request_key)
+  CHECK (foreign_amount > 0)
+}
+
+users ||--o{ wallet_balances : owns
+currencies ||--o{ wallet_balances : "held in"
+currencies ||--o{ exchange_rates : "quoted for"
+users ||--o{ transactions : places
+currencies ||--o{ transactions : "traded"
+exchange_rates |o--o{ transactions : "applied to"
+@enduml
