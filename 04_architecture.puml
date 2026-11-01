@@ -1,0 +1,51 @@
+@startuml
+title System Architecture and Data Flow
+skinparam dpi 150
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam component {
+  BackgroundColor #F4F8FC
+  BorderColor #1F4E79
+}
+skinparam database {
+  BackgroundColor #FFF7E6
+  BorderColor #8A6D1F
+}
+
+actor "User" as U
+
+node "Mobile device" {
+  component "User interface\n(screens)" as UI
+  component "RateRepository" as RR
+  component "OrderQueue\n(retry logic)" as OQ
+  component "ApiClient\n(timeouts)" as AC
+  database "Local store\n(cached rates,\nunconfirmed orders)" as LS
+}
+
+node "Application server" {
+  component "REST API\n(auth, validation)" as API
+  component "RateService" as RS
+  component "OrderService\n(idempotent)" as OS
+  component "Scheduler\n(rate sync)" as SCH
+  component "NbpClient" as NC
+}
+
+database "Database\n(users, balances,\nrates, transactions)" as DB
+cloud "NBP Web API\n(api.nbp.pl)" as NBP
+
+U --> UI : 1. taps / views
+UI --> RR : 2. rate request
+UI --> OQ : 2. buy / sell order
+RR --> LS : read / write cache
+OQ --> LS : save unconfirmed order
+RR --> AC
+OQ --> AC
+AC --> API : 3. HTTPS + JSON\n(Idempotency-Key)
+API --> RS
+API --> OS
+RS --> DB : 4. read rates
+OS --> DB : 5. atomic transaction
+SCH --> RS : periodic trigger
+RS --> NC
+NC --> NBP : 6. GET tables/C
+@enduml
