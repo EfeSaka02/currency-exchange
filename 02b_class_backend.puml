@@ -1,0 +1,35 @@
+@startuml
+title Class Diagram (2/3) - Backend services
+skinparam dpi 150
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #F4F8FC
+  BorderColor #1F4E79
+}
+hide empty members
+
+package "Backend services" {
+  class NbpClient {
+    +fetchTableC() : List<ExchangeRate>
+    +fetchHistory(code, days) : List<ExchangeRate>
+  }
+  class RateService {
+    +getLatestRates() : List<ExchangeRate>
+    +getHistory(code, days) : List<ExchangeRate>
+    +syncFromNbp() : void
+  }
+  class OrderService {
+    +placeOrder(userId, requestKey, type, code, amount, rateDate) : Transaction
+    +findByRequestKey(userId, requestKey) : Transaction
+    +listTransactions(userId) : List<Transaction>
+  }
+}
+
+
+RateService ..> NbpClient : uses
+RateService ..> ExchangeRate : stores
+OrderService ..> Transaction : creates
+OrderService ..> WalletBalance : updates
+OrderService ..> RateService : gets rate
+@enduml
