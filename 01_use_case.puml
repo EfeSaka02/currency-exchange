@@ -1,0 +1,50 @@
+@startuml
+title Use Case Diagram - Mobile Currency Exchange System
+left to right direction
+skinparam linetype polyline
+skinparam nodesep 25
+skinparam ranksep 60
+skinparam dpi 150
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #F4F8FC
+  BorderColor #1F4E79
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #1F4E79
+}
+
+actor "User" as U
+actor "NBP API\n<<external system>>" as NBP
+
+rectangle "Mobile Currency Exchange System" {
+  usecase "Register / log in" as UC1
+  usecase "View current exchange rates" as UC2
+  usecase "View rate history" as UC3
+  usecase "View wallet" as UC4
+  usecase "Buy currency" as UC5
+  usecase "Sell currency" as UC6
+  usecase "View transaction history" as UC7
+  usecase "Show cached rates\n(offline mode)" as UC8
+  usecase "Retry unconfirmed order" as UC9
+  usecase "Check order status" as UC10
+  usecase "Synchronize rates\nwith NBP" as UC11
+}
+
+U --> UC1
+U --> UC2
+U --> UC3
+U --> UC4
+U --> UC5
+U --> UC6
+U --> UC7
+
+UC8 ..> UC2 : <<extend>>\n[no connection]
+UC9 ..> UC5 : <<extend>>\n[no response]
+UC9 ..> UC6 : <<extend>>\n[no response]
+UC9 ..> UC10 : <<include>>
+
+NBP --> UC11
+@enduml
