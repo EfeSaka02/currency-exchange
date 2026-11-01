@@ -1,0 +1,32 @@
+@startuml
+title Buy order with a lost response (scenario NF-03)
+skinparam dpi 150
+skinparam shadowing false
+skinparam sequence {
+  ParticipantBackgroundColor #F4F8FC
+  ParticipantBorderColor #1F4E79
+}
+autonumber
+
+actor User
+participant "Mobile app" as App
+database "Local store" as LS
+participant "REST API" as API
+database "Database" as DB
+
+User -> App : tap "Buy 100 USD"
+App -> App : generate requestKey (UUID)
+App -> LS : save order, status = UNCONFIRMED
+App -> API : POST /orders\nIdempotency-Key: requestKey
+API -> DB : BEGIN; insert transaction;\nupdate balances; COMMIT
+DB --> API : ok
+API -[#red]-> App : 201 Created\n(response lost, connection dropped)
+App -> App : timeout after 10 s,\noutcome unknown
+App -> App : wait (backoff 2 s)
+App -> API : POST /orders\nsame Idempotency-Key
+API -> DB : find transaction by (user, requestKey)
+DB --> API : existing transaction
+API --> App : 200 OK (original result,\nnot executed again)
+App -> LS : status = COMPLETED
+App --> User : "Purchase completed"
+@enduml
