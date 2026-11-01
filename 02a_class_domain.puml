@@ -1,0 +1,64 @@
+@startuml
+title Class Diagram (1/3) - Domain model
+skinparam dpi 150
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #F4F8FC
+  BorderColor #1F4E79
+}
+hide empty members
+
+package "Domain model" {
+  class User {
+    +id : UUID
+    +email : String
+    -passwordHash : String
+    +createdAt : DateTime
+  }
+  class Currency {
+    +code : String
+    +name : String
+  }
+  class WalletBalance {
+    +amount : Decimal
+    +credit(amount) : void
+    +debit(amount) : void
+  }
+  class ExchangeRate {
+    +effectiveDate : Date
+    +bid : Decimal
+    +ask : Decimal
+    +fetchedAt : DateTime
+    +isStale(maxAge) : Boolean
+  }
+  class Transaction {
+    +id : UUID
+    +requestKey : UUID
+    +foreignAmount : Decimal
+    +rate : Decimal
+    +plnAmount : Decimal
+    +rejectionReason : String
+    +createdAt : DateTime
+    +completedAt : DateTime
+  }
+  enum TransactionType {
+    BUY
+    SELL
+  }
+  enum TransactionStatus {
+    PENDING
+    COMPLETED
+    REJECTED
+  }
+}
+
+User "1" -- "0..*" WalletBalance : owns
+User "1" -- "0..*" Transaction : places
+Currency "1" -- "0..*" WalletBalance
+Currency "1" -- "0..*" ExchangeRate
+Currency "1" -- "0..*" Transaction
+ExchangeRate "0..1" -- "0..*" Transaction : applied rate
+Transaction ..> TransactionType
+Transaction ..> TransactionStatus
+@enduml
